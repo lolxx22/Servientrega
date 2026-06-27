@@ -16,7 +16,7 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-  origin: env.APP_URL,
+  origin: env.APP_URL.replace(/\/$/, ''),
   credentials: true,
 }));
 

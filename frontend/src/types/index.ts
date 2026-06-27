@@ -6,6 +6,10 @@ export interface User {
   createdAt: string;
 }
 
+export type EstadoEnvio =
+  | 'PENDIENTE' | 'RECOGIDO' | 'EN_TRANSITO' | 'EN_SUCURSAL'
+  | 'EN_ENTREGA' | 'ENTREGADO' | 'CANCELADO';
+
 export interface Shipment {
   id: number;
   numeroGuia: string;
@@ -21,10 +25,23 @@ export interface Shipment {
   peso: number;
   tipoProducto: string | null;
   costoEnvio: number | null;
-  estado: 'PENDIENTE' | 'EN_TRANSITO' | 'ENTREGADO' | 'CANCELADO';
+  estado: EstadoEnvio;
   sucursalId: number | null;
   fechaCreacion: string;
   fechaEntrega: string | null;
+}
+
+export interface CreateShipmentInput {
+  origen: string;
+  destino: string;
+  peso: number;
+  remitenteNombre: string;
+  remitenteTelefono: string;
+  remitenteDireccion: string;
+  destinatarioNombre: string;
+  destinatarioTelefono: string;
+  destinatarioDireccion: string;
+  tipoProducto?: string;
 }
 
 export interface TrackingInfo {

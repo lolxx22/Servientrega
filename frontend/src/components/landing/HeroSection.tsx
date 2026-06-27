@@ -1,236 +1,223 @@
-import { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Package, ArrowRight, Sparkles, Globe, Clock, Shield, Zap } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { Search, MapPin, ArrowRight } from 'lucide-react';
+import heroImg from '../../assets/hero.png';
+
+const CITIES = ['Quito', 'Guayaquil', 'Cuenca', 'Ambato', 'Manta', 'Loja', 'Latacunga', 'Riobamba'];
+const TYPES  = ['Documento', 'Paquete', 'Electrodoméstico', 'Mercancía'];
+
+const RATES: Record<string, [number, number, number]> = {
+  'Quito-Guayaquil':  [2.50, 1.80, 5.00], 'Guayaquil-Quito':  [2.50, 1.80, 5.00],
+  'Quito-Cuenca':     [3.00, 2.20, 6.00], 'Cuenca-Quito':     [3.00, 2.20, 6.00],
+  'Quito-Ambato':     [2.00, 1.50, 4.00], 'Ambato-Quito':     [2.00, 1.50, 4.00],
+  'Quito-Manta':      [2.80, 2.00, 5.50], 'Manta-Quito':      [2.80, 2.00, 5.50],
+  'Quito-Loja':       [3.50, 2.50, 7.00], 'Loja-Quito':       [3.50, 2.50, 7.00],
+  'Guayaquil-Cuenca': [2.80, 2.00, 5.50], 'Cuenca-Guayaquil': [2.80, 2.00, 5.50],
+};
+
+function calcPrice(o: string, d: string, kg: number, tipo: string) {
+  if (!o || !d || o === d || kg <= 0) return null;
+  const [base, perKg, min] = RATES[`${o}-${d}`] ?? [3.00, 2.00, 6.00];
+  return Math.max(min, tipo === 'Documento' ? base : base + kg * perKg);
+}
+
+/* ── shared input/select base style ── */
+const FIELD_BASE: React.CSSProperties = {
+  width: '100%',
+  height: 48,
+  border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: 12,
+  background: 'rgba(255,255,255,0.06)',
+  color: 'white',
+  fontSize: 14,
+  outline: 'none',
+  transition: 'border-color 0.2s',
+  appearance: 'none' as const,
+};
 
 export const HeroSection = () => {
-  const [trackingNumber, setTrackingNumber] = useState('');
-  const routeLineRef = useRef<SVGLineElement>(null);
+  const [tracking, setTracking] = useState('');
+  const [origen,   setOrigen]   = useState('Quito');
+  const [destino,  setDestino]  = useState('Guayaquil');
+  const [peso,     setPeso]     = useState(5);
+  const [tipo,     setTipo]     = useState('Paquete');
   const navigate = useNavigate();
-
-  const handleTrack = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (trackingNumber.trim()) {
-      navigate(`/tracking?guia=${trackingNumber}`);
-    }
-  };
-
-  useEffect(() => {
-    const el = routeLineRef.current;
-    if (!el) return;
-
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      el.style.strokeDashoffset = '0';
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.add('animate');
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    const parent = el.closest('section');
-    if (parent) observer.observe(parent);
-
-    return () => observer.disconnect();
-  }, []);
-
-  const stats = [
-    { value: '50M+', label: 'Envíos entregados', icon: Package },
-    { value: '24/7', label: 'Soporte activo', icon: Clock },
-    { value: '+8', label: 'Países', icon: Globe },
-  ];
+  const price = calcPrice(origen, destino, peso, tipo);
 
   return (
-    <section className="relative min-h-[100dvh] flex items-center bg-gradient-to-br from-primary-dark via-primary-dark to-primary overflow-hidden">
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-        backgroundSize: '60px 60px'
-      }} />
+    <section style={{ position: 'relative', width: '100%', minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: 64, overflow: 'hidden' }}>
+      {/* fondo full-width */}
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${heroImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, rgba(11,20,16,0.95) 0%, rgba(11,20,16,0.82) 50%, rgba(11,20,16,0.60) 100%)' }} />
 
-      {/* Glow accents */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px]" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-primary-light/10 rounded-full blur-[100px]" />
+      {/* contenido */}
+      <div className="page-container" style={{ position: 'relative', width: '100%', paddingTop: '4rem', paddingBottom: '4rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-0 w-full">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          {/* Left - Content */}
+        {/* ── Headline (arriba, ancho completo) ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.25rem, 4vw, 3.75rem)', fontWeight: 700, color: 'white', lineHeight: 1.12, margin: 0 }}>
+            Envíos inteligentes,<br />
+            <span style={{ color: 'var(--color-primary-light)' }}>entregas a tiempo</span>
+          </h1>
+          <p style={{ marginTop: 14, fontSize: 16, color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, maxWidth: 560 }}>
+            La nueva experiencia digital de Servientrega impulsada por Inteligencia Artificial.
+          </p>
+        </motion.div>
+
+        {/* ── Cards apiladas, ancho completo ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+          {/* Tracking card */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-7 space-y-8"
+            transition={{ delay: 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 text-white/80 text-xs font-semibold tracking-wider uppercase backdrop-blur-sm"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-primary-light" />
-              Impulsado por Inteligencia Artificial
-            </motion.div>
-
-            {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.08] tracking-tight font-display" style={{ textWrap: 'balance' }}>
-              Envía y rastrea tus paquetes de forma{' '}
-              <span className="relative inline-block">
-                <span className="text-primary-light">inteligente</span>
-                <motion.div
-                  className="absolute -bottom-1 left-0 right-0 h-[3px] bg-gradient-to-r from-primary-light via-white/50 to-primary-light rounded-full"
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.8, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ transformOrigin: 'left' }}
-                />
-              </span>
-            </h1>
-
-            {/* Subheadline */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-lg text-white/60 max-w-lg leading-relaxed"
-            >
-              La nueva experiencia digital de Servientrega. Atención 24/7,
-              seguimiento en tiempo real y gestión automatizada de envíos.
-            </motion.p>
-
-            {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="flex flex-col sm:flex-row gap-3"
-            >
-              <Link to="/tracking">
-                <Button size="lg" leftIcon={<Package className="w-5 h-5" />} rightIcon={<ArrowRight className="w-4 h-4" />}>
-                  Consultar Guía
-                </Button>
-              </Link>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => document.getElementById('chat-widget')?.click()}
-                className="border-white/20 text-white hover:bg-white/5 hover:border-white/30"
+            <div style={{ background: 'white', borderRadius: 20, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+              <div className="card-inner" style={{ paddingBottom: 14 }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--color-neutral-900)', margin: 0 }}>
+                  Rastrea tu envío
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--color-neutral-400)', marginTop: 6, lineHeight: 1.5 }}>
+                  Ingresa tu número de guía para conocer el estado de tu envío
+                </p>
+              </div>
+              <form
+                onSubmit={e => { e.preventDefault(); if (tracking.trim()) navigate(`/tracking?guia=${tracking}`); }}
+                className="card-inner"
+                style={{ paddingTop: 0 }}
               >
-                Hablar con ServiBot AI
-                <Sparkles className="w-4 h-4 ml-1" />
-              </Button>
-            </motion.div>
-
-            {/* Stats */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.6 }}
-              className="flex items-center gap-6 pt-4"
-            >
-              {stats.map((stat, i) => (
-                <div key={stat.label} className="flex items-center gap-3">
-                  {i > 0 && <div className="w-px h-8 bg-white/10" />}
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-                      <stat.icon className="w-4 h-4 text-primary-light" />
-                    </div>
-                    <div>
-                      <div className="text-xl font-bold text-white font-mono">{stat.value}</div>
-                      <div className="text-[11px] text-white/40 font-medium">{stat.label}</div>
-                    </div>
-                  </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <input
+                    type="text"
+                    value={tracking}
+                    onChange={e => setTracking(e.target.value)}
+                    placeholder="Ej: SV-2026-000123"
+                    style={{
+                      flex: 1, height: 48, padding: '0 16px',
+                      background: 'var(--color-neutral-50)',
+                      border: '1px solid var(--color-neutral-200)',
+                      borderRadius: 12, fontSize: 14,
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--color-neutral-900)',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    style={{
+                      height: 48, padding: '0 20px',
+                      background: 'var(--color-primary)',
+                      color: 'white', border: 'none',
+                      borderRadius: 12, fontSize: 14, fontWeight: 600,
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Search style={{ width: 16, height: 16 }} />
+                    Rastrear
+                  </button>
                 </div>
-              ))}
-            </motion.div>
+                {/* stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--color-neutral-100)', textAlign: 'center' }}>
+                  {[['24/7', 'Disponibilidad'], ['100%', 'Automatizado'], ['IA', 'Avanzada']].map(([v, l]) => (
+                    <div key={l}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--color-primary)' }}>{v}</div>
+                      <div style={{ fontSize: 11, color: 'var(--color-neutral-400)', marginTop: 2 }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+              </form>
+            </div>
           </motion.div>
 
-          {/* Right - Tracking Card */}
+          {/* Quote card */}
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-5 w-full max-w-md lg:mx-auto"
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="relative">
-              {/* Glow behind card */}
-              <div className="absolute -inset-6 bg-gradient-to-br from-primary/20 via-primary-light/10 to-primary/5 rounded-3xl blur-2xl opacity-60" />
+            <div style={{ background: 'rgba(15,23,42,0.82)', backdropFilter: 'blur(20px)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              <div style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'white', margin: 0 }}>
+                  Cotiza tu envío
+                </h3>
+              </div>
 
-              {/* Card */}
-              <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
-                {/* Green header bar */}
-                <div className="bg-gradient-to-r from-primary to-primary-dark px-7 py-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                      <Package className="w-6 h-6 text-white" />
+              <div className="card-inner">
+                {/* fila 1: Origen + Destino + Peso + Tipo en una sola línea horizontal */}
+                <div style={{ display: 'grid', gap: 14 }} className="quote-fields">
+                  <style>{`@media(min-width:640px){.quote-fields{grid-template-columns:1fr 1fr 1fr 1fr}}`}</style>
+
+                  {/* Origen */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--color-neutral-300)', marginBottom: 8 }}>Origen</label>
+                    <div style={{ position: 'relative' }}>
+                      <MapPin style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: 'var(--color-neutral-500)', pointerEvents: 'none' }} />
+                      <select value={origen} onChange={e => setOrigen(e.target.value)} style={{ ...FIELD_BASE, paddingLeft: 38, paddingRight: 12 }}>
+                        {CITIES.map(c => <option key={c} value={c} style={{ background: '#1E293B' }}>{c}</option>)}
+                      </select>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white tracking-tight font-display">Rastrea tu envío</h3>
-                      <p className="text-sm text-white/70">Ingresa tu número de guía</p>
+                  </div>
+
+                  {/* Destino */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--color-neutral-300)', marginBottom: 8 }}>Destino</label>
+                    <div style={{ position: 'relative' }}>
+                      <MapPin style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: 'var(--color-neutral-500)', pointerEvents: 'none' }} />
+                      <select value={destino} onChange={e => setDestino(e.target.value)} style={{ ...FIELD_BASE, paddingLeft: 38, paddingRight: 12 }}>
+                        {CITIES.map(c => <option key={c} value={c} style={{ background: '#1E293B' }}>{c}</option>)}
+                      </select>
                     </div>
+                  </div>
+
+                  {/* Peso */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--color-neutral-300)', marginBottom: 8 }}>Peso</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number" min={0.1} step={0.5} value={peso}
+                        onChange={e => setPeso(parseFloat(e.target.value) || 0)}
+                        style={{ ...FIELD_BASE, paddingLeft: 16, paddingRight: 40 }}
+                      />
+                      <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--color-neutral-500)', fontWeight: 500, pointerEvents: 'none' }}>Kg</span>
+                    </div>
+                  </div>
+
+                  {/* Tipo */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--color-neutral-300)', marginBottom: 8 }}>Tipo</label>
+                    <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ ...FIELD_BASE, paddingLeft: 14, paddingRight: 12 }}>
+                      {TYPES.map(t => <option key={t} value={t} style={{ background: '#1E293B' }}>{t}</option>)}
+                    </select>
                   </div>
                 </div>
 
-                {/* Form body */}
-                <div className="p-7">
-                  <form onSubmit={handleTrack} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                        Número de guía
-                      </label>
-                      <input
-                        type="text"
-                        value={trackingNumber}
-                        onChange={(e) => setTrackingNumber(e.target.value)}
-                        placeholder="Ej: SV-123456"
-                        className="w-full h-12 px-4 bg-neutral-50 border border-neutral-200 rounded-xl text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white outline-none transition-all duration-200 font-mono"
-                      />
-                    </div>
-                    <Button type="submit" fullWidth size="lg" rightIcon={<ArrowRight className="w-5 h-5" />}>
-                      Rastrear Ahora
-                    </Button>
-                  </form>
-
-                  <div className="mt-6 pt-6 border-t border-neutral-100">
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      {[
-                        { value: '24/7', label: 'Disponible', icon: Clock },
-                        { value: '100%', label: 'Automatizado', icon: Zap },
-                        { value: 'IA', label: 'Avanzada', icon: Shield },
-                      ].map((item) => (
-                        <div key={item.label} className="space-y-1.5">
-                          <item.icon className="w-4 h-4 text-primary mx-auto" />
-                          <div className="text-base font-bold text-neutral-900 font-mono">{item.value}</div>
-                          <div className="text-[10px] text-neutral-400 font-medium uppercase tracking-wider">{item.label}</div>
-                        </div>
-                      ))}
-                    </div>
+                {/* fila 2: precio + botón */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginTop: 20, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: 'var(--color-neutral-400)', marginBottom: 4 }}>Precio estimado</div>
+                    {price !== null
+                      ? <div style={{ fontFamily: 'var(--font-mono)', fontSize: 36, fontWeight: 700, color: 'var(--color-primary-light)', lineHeight: 1 }}>$ {price.toFixed(2)}</div>
+                      : <div style={{ fontSize: 13, color: 'var(--color-neutral-500)' }}>Selecciona ciudades distintas</div>
+                    }
                   </div>
+                  <button
+                    onClick={() => navigate('/tracking')}
+                    style={{ height: 50, padding: '0 28px', background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+                  >
+                    Crear envío <ArrowRight style={{ width: 16, height: 16 }} />
+                  </button>
                 </div>
               </div>
             </div>
-
-            {/* Route line */}
-            <div className="hidden lg:flex justify-center mt-8">
-              <svg width="2" height="80" viewBox="0 0 2 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <line
-                  ref={routeLineRef}
-                  x1="1" y1="0" x2="1" y2="80"
-                  stroke="#3FC97A"
-                  strokeWidth="2"
-                  strokeDasharray="6 4"
-                  className="route-line"
-                />
-              </svg>
-            </div>
           </motion.div>
+
         </div>
       </div>
     </section>

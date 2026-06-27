@@ -254,6 +254,46 @@ body {
   stroke-dashoffset: 0;
 }
 
+/* ─── Layout Utilities (CSS-guaranteed, no Tailwind purge issue) ─── */
+.page-container {
+  width: 100%;
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+}
+@media (min-width: 1024px) {
+  .page-container {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+@media (min-width: 1280px) {
+  .page-container {
+    padding-left: 5rem;
+    padding-right: 5rem;
+  }
+}
+
+.section-py {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+@media (min-width: 1024px) {
+  .section-py {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+}
+
+.card-inner {
+  padding: 1.75rem;
+}
+
+.form-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
 /* ─── Reduced Motion ─── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

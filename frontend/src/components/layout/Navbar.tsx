@@ -1,227 +1,161 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Bot, LayoutDashboard, LogOut } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Menu, X, Bot, LayoutDashboard, LogOut, Bell } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useAuthStore } from '../../stores/authStore';
-import { Button } from '../ui/Button';
+import { Avatar } from '../ui/Avatar';
+
+const NAV_LINKS = [
+  { name: 'Inicio',      path: '/' },
+  { name: 'Seguimiento', path: '/tracking' },
+];
 
 export const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuthStore();
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    setIsOpen(false);
-  }, [location]);
-
-  const navLinks = [
-    { name: 'Inicio', path: '/' },
-    { name: 'Servicios', path: '/#servicios' },
-    { name: 'Seguimiento', path: '/tracking' },
-    { name: 'Contacto', path: '/#contacto' },
-  ];
-
-  const isActive = (path: string) => location.pathname === path;
+  const active = (p: string) => location.pathname === p;
 
   return (
     <>
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? 'bg-white/95 backdrop-blur-lg border-b border-neutral-200/60 shadow-sm'
-            : 'bg-transparent'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+      <nav className="fixed top-0 inset-x-0 z-50 bg-white border-b border-neutral-200">
+        <div className="page-container">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
+
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-primary/20 transition-all duration-300 group-hover:scale-105">
-                <Bot className="w-5 h-5 text-white" />
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <div style={{ width: 36, height: 36, background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bot style={{ width: 20, height: 20, color: 'white' }} />
               </div>
-              <span className="text-lg font-bold tracking-tight font-display">
-                <span className={scrolled ? 'text-neutral-900' : 'text-white'}>Servi</span>
-                <span className="text-primary">Bot</span>
-                <span className={`text-xs font-medium ml-1 ${scrolled ? 'text-neutral-400' : 'text-white/50'}`}>AI</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--color-neutral-900)' }}>
+                Servi<span style={{ color: 'var(--color-primary)' }}>Bot</span>
+                <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-neutral-400)', marginLeft: 4 }}>AI</span>
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => (
+            {/* Desktop links */}
+            <div className="hidden lg:flex" style={{ gap: 4 }}>
+              {NAV_LINKS.map(l => (
                 <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    isActive(link.path)
-                      ? scrolled
-                        ? 'text-primary bg-primary/5'
-                        : 'text-white bg-white/10'
-                      : scrolled
-                        ? 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
-                        : 'text-white/70 hover:text-white hover:bg-white/10'
-                  }`}
+                  key={l.name} to={l.path}
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    borderRadius: 8,
+                    color: active(l.path) ? 'var(--color-primary)' : 'var(--color-neutral-600)',
+                    textDecoration: 'none',
+                    transition: 'color 0.15s',
+                  }}
                 >
-                  {link.name}
+                  {l.name}
                 </Link>
               ))}
             </div>
 
-            {/* Auth Buttons */}
-            <div className="hidden md:flex items-center gap-2">
+            {/* Right */}
+            <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8 }}>
               {isAuthenticated ? (
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm mr-1 ${scrolled ? 'text-neutral-500' : 'text-white/70'}`}>
-                    Hola, <span className={`font-semibold ${scrolled ? 'text-neutral-900' : 'text-white'}`}>{user?.nombre?.split(' ')[0]}</span>
-                  </span>
+                <>
+                  <button style={{ position: 'relative', padding: 8, borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--color-neutral-500)' }}>
+                    <Bell style={{ width: 20, height: 20 }} />
+                    <span style={{ position: 'absolute', top: 6, right: 6, width: 16, height: 16, background: 'var(--color-primary)', color: 'white', fontSize: 9, fontWeight: 700, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</span>
+                  </button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', borderLeft: '1px solid var(--color-neutral-200)', marginLeft: 4 }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-neutral-900)', lineHeight: 1.2 }}>
+                        {user?.nombre?.split(' ').slice(0, 2).join(' ') || 'Usuario'}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--color-neutral-400)', lineHeight: 1.2 }}>
+                        {user?.rol === 'ADMIN' ? 'Administrador' : 'Operador'}
+                      </div>
+                    </div>
+                    <Avatar name={user?.nombre || ''} size="sm" />
+                  </div>
+
                   {user?.rol === 'ADMIN' && (
-                    <Link
-                      to="/dashboard"
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                        scrolled
-                          ? 'text-primary hover:bg-primary/5'
-                          : 'text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <LayoutDashboard className="w-4 h-4" />
+                    <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', fontSize: 13, fontWeight: 500, color: 'var(--color-primary)', textDecoration: 'none', borderRadius: 8 }}>
+                      <LayoutDashboard style={{ width: 15, height: 15 }} />
                       Dashboard
                     </Link>
                   )}
+
                   <button
                     onClick={logout}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
-                      scrolled
-                        ? 'text-neutral-500 hover:text-danger hover:bg-danger/5'
-                        : 'text-white/60 hover:text-white hover:bg-white/10'
-                    }`}
+                    title="Cerrar sesión"
+                    style={{ padding: 8, borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--color-neutral-400)' }}
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut style={{ width: 16, height: 16 }} />
                   </button>
-                </div>
+                </>
               ) : (
                 <>
-                  <Link
-                    to="/login"
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                      scrolled
-                        ? 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
-                        : 'text-white/80 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
+                  <Link to="/login" style={{ padding: '8px 16px', fontSize: 14, fontWeight: 500, color: 'var(--color-neutral-600)', textDecoration: 'none', borderRadius: 8 }}>
                     Iniciar Sesión
                   </Link>
-                  <Link to="/register">
-                    <Button size="sm">Registrarse</Button>
+                  <Link to="/register" style={{ padding: '8px 16px', fontSize: 14, fontWeight: 600, color: 'white', background: 'var(--color-primary)', textDecoration: 'none', borderRadius: 8 }}>
+                    Registrarse
                   </Link>
                 </>
               )}
             </div>
 
-            {/* Mobile menu button */}
+            {/* Mobile burger */}
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className={`md:hidden p-2 rounded-lg transition-all duration-200 cursor-pointer ${
-                scrolled ? 'text-neutral-600 hover:bg-neutral-100' : 'text-white hover:bg-white/10'
-              }`}
+              className="lg:hidden"
+              onClick={() => setOpen(!open)}
+              style={{ padding: 8, borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--color-neutral-600)' }}
             >
-              <AnimatePresence mode="wait" initial={false}>
-                {isOpen ? (
-                  <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                    <X className="w-5 h-5" />
-                  </motion.div>
-                ) : (
-                  <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                    <Menu className="w-5 h-5" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {open ? <X style={{ width: 20, height: 20 }} /> : <Menu style={{ width: 20, height: 20 }} />}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile menu overlay */}
+      {/* Mobile menu */}
       <AnimatePresence>
-        {isOpen && (
+        {open && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"
-              onClick={() => setIsOpen(false)}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 lg:hidden"
+              style={{ background: 'rgba(0,0,0,0.2)' }}
+              onClick={() => setOpen(false)}
             />
             <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="fixed top-16 left-4 right-4 bg-white rounded-2xl shadow-2xl border border-neutral-200 z-50 md:hidden overflow-hidden"
+              className="fixed z-50 lg:hidden"
+              style={{ top: 68, left: 16, right: 16, background: 'white', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', border: '1px solid var(--color-neutral-200)', padding: 8 }}
             >
-              <div className="p-3 space-y-0.5">
-                {navLinks.map((link, i) => (
-                  <motion.div
-                    key={link.path}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                  >
-                    <Link
-                      to={link.path}
-                      className={`block px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
-                        isActive(link.path)
-                          ? 'text-primary bg-primary/5'
-                          : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
-                      }`}
-                    >
-                      {link.name}
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-              <div className="px-3 pb-3 pt-1 border-t border-neutral-100">
+              {NAV_LINKS.map(l => (
+                <Link
+                  key={l.name} to={l.path}
+                  onClick={() => setOpen(false)}
+                  style={{
+                    display: 'block', padding: '10px 16px', fontSize: 14, fontWeight: 500,
+                    borderRadius: 10, textDecoration: 'none', marginBottom: 2,
+                    color: active(l.path) ? 'var(--color-primary)' : 'var(--color-neutral-600)',
+                    background: active(l.path) ? 'rgba(30,138,76,0.06)' : 'none',
+                  }}
+                >
+                  {l.name}
+                </Link>
+              ))}
+              <div style={{ borderTop: '1px solid var(--color-neutral-100)', marginTop: 8, paddingTop: 8, display: 'flex', gap: 8 }}>
                 {isAuthenticated ? (
-                  <div className="space-y-0.5">
-                    {user?.rol === 'ADMIN' && (
-                      <Link
-                        to="/dashboard"
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-primary bg-primary/5 rounded-xl"
-                      >
-                        <LayoutDashboard className="w-4 h-4" />
-                        Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => { logout(); setIsOpen(false); }}
-                      className="flex items-center gap-2 w-full px-4 py-2.5 text-sm font-medium text-neutral-500 hover:text-danger hover:bg-danger/5 rounded-xl transition-all duration-200 cursor-pointer"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Cerrar Sesión
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => { logout(); setOpen(false); }}
+                    style={{ flex: 1, padding: '10px 16px', fontSize: 13, fontWeight: 500, color: 'var(--color-danger)', background: 'rgba(239,68,68,0.06)', border: 'none', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  >
+                    <LogOut style={{ width: 14, height: 14 }} /> Cerrar Sesión
+                  </button>
                 ) : (
-                  <div className="flex gap-2">
-                    <Link
-                      to="/login"
-                      className="flex-1 text-center px-4 py-2.5 text-sm font-medium text-neutral-600 bg-neutral-100 rounded-xl hover:bg-neutral-200 transition-all duration-200"
-                    >
-                      Iniciar Sesión
-                    </Link>
-                    <Link
-                      to="/register"
-                      className="flex-1 text-center px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-all duration-200"
-                    >
-                      Registrarse
-                    </Link>
-                  </div>
+                  <>
+                    <Link to="/login" onClick={() => setOpen(false)} style={{ flex: 1, textAlign: 'center', padding: '10px 16px', fontSize: 13, fontWeight: 500, color: 'var(--color-neutral-600)', background: 'var(--color-neutral-100)', borderRadius: 10, textDecoration: 'none' }}>Iniciar Sesión</Link>
+                    <Link to="/register" onClick={() => setOpen(false)} style={{ flex: 1, textAlign: 'center', padding: '10px 16px', fontSize: 13, fontWeight: 600, color: 'white', background: 'var(--color-primary)', borderRadius: 10, textDecoration: 'none' }}>Registrarse</Link>
+                  </>
                 )}
               </div>
             </motion.div>

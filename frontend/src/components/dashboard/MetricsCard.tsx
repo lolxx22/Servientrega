@@ -4,44 +4,49 @@ import { Package, Users, Truck, CheckCircle, Clock, Building2, TrendingUp } from
 import { useDashboardStore } from '../../stores/dashboardStore';
 import { Skeleton } from '../ui/Spinner';
 
-const MetricsCard = ({
-  title,
-  value,
-  icon: Icon,
-  color,
-  trend,
-  trendUp,
+const CARD_STYLE: React.CSSProperties = {
+  background: 'white',
+  padding: '20px',
+  borderRadius: 16,
+  border: '1px solid #F1F3F5',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+  position: 'relative',
+  overflow: 'hidden',
+};
+
+const MetricCard = ({
+  title, value, Icon, bg, trend, trendUp,
 }: {
-  title: string;
-  value: number;
-  icon: React.ElementType;
-  color: string;
-  trend?: string;
-  trendUp?: boolean;
+  title: string; value: number; Icon: React.ElementType;
+  bg: string; trend?: string; trendUp?: boolean;
 }) => (
   <motion.div
-    initial={{ opacity: 0, y: 12 }}
+    initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -3, boxShadow: '0 8px 30px rgba(30, 138, 76, 0.12)' }}
+    whileHover={{ y: -2, boxShadow: '0 8px 28px rgba(30,138,76,0.1)' }}
     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-    className="bg-white p-5 rounded-2xl border border-neutral-100 shadow-sm hover:border-primary/20 transition-colors duration-300 group relative overflow-hidden"
+    style={CARD_STYLE}
   >
-    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/5 to-transparent rounded-full -translate-y-8 translate-x-8 group-hover:scale-150 transition-transform duration-500" />
-    <div className="relative flex items-start justify-between">
-      <div className="space-y-2">
-        <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{title}</p>
-        <p className="text-3xl font-bold text-neutral-900 tracking-tight font-mono" style={{ fontVariantNumeric: 'tabular-nums' }}>
+    {/* subtle accent orb */}
+    <div style={{ position: 'absolute', top: -24, right: -24, width: 80, height: 80, background: 'rgba(30,138,76,0.04)', borderRadius: '50%' }} />
+
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-neutral-400)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
+          {title}
+        </p>
+        <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--color-neutral-900)', fontFamily: 'var(--font-mono)', margin: '0 0 6px', fontVariantNumeric: 'tabular-nums' }}>
           {(value ?? 0).toLocaleString('es-EC')}
         </p>
         {trend && (
-          <div className={`flex items-center gap-1 text-xs font-semibold ${trendUp !== false ? 'text-success' : 'text-neutral-400'}`}>
-            {trendUp !== false && <TrendingUp className="w-3 h-3" />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: trendUp !== false ? 'var(--color-success)' : 'var(--color-neutral-400)' }}>
+            {trendUp !== false && <TrendingUp style={{ width: 12, height: 12 }} />}
             {trend}
           </div>
         )}
       </div>
-      <div className={`w-11 h-11 ${color} rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
-        <Icon className="w-5 h-5 text-white" />
+      <div style={{ width: 42, height: 42, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>
+        <Icon style={{ width: 20, height: 20, color: 'white' }} />
       </div>
     </div>
   </motion.div>
@@ -50,79 +55,39 @@ const MetricsCard = ({
 export const DashboardMetrics = () => {
   const { metrics, isLoading, loadMetrics } = useDashboardStore();
 
-  useEffect(() => {
-    loadMetrics();
-  }, [loadMetrics]);
+  useEffect(() => { loadMetrics(); }, [loadMetrics]);
 
   if (isLoading || !metrics) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="bg-white p-5 rounded-2xl border border-neutral-100 shadow-sm">
-            <div className="space-y-3">
-              <Skeleton className="h-3 w-1/2" variant="rounded" />
-              <Skeleton className="h-8 w-1/3" variant="rounded" />
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }} className="metrics-grid">
+        <style>{`@media(max-width:900px){.metrics-grid{grid-template-columns:repeat(2,1fr)}} @media(max-width:500px){.metrics-grid{grid-template-columns:1fr}}`}</style>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} style={{ ...CARD_STYLE, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Skeleton className="h-3 w-1/2" variant="rounded" />
+            <Skeleton className="h-7 w-1/3" variant="rounded" />
           </div>
         ))}
       </div>
     );
   }
 
-  const metricsData = [
-    {
-      title: 'Total Envíos',
-      value: metrics.totalShipments,
-      icon: Package,
-      color: 'bg-gradient-to-br from-primary to-primary-dark',
-      trend: '+12% este mes',
-      trendUp: true,
-    },
-    {
-      title: 'En Tránsito',
-      value: metrics.activeShipments,
-      icon: Truck,
-      color: 'bg-gradient-to-br from-info to-blue-600',
-      trend: `${metrics.activeShipments} activos`,
-      trendUp: true,
-    },
-    {
-      title: 'Entregados',
-      value: metrics.deliveredShipments,
-      icon: CheckCircle,
-      color: 'bg-gradient-to-br from-success to-emerald-600',
-      trend: `${metrics.totalShipments > 0 ? Math.round((metrics.deliveredShipments / metrics.totalShipments) * 100) : 0}% total`,
-      trendUp: true,
-    },
-    {
-      title: 'Pendientes',
-      value: metrics.pendingShipments,
-      icon: Clock,
-      color: 'bg-gradient-to-br from-warning to-amber-600',
-      trend: `${metrics.pendingShipments} por entregar`,
-      trendUp: false,
-    },
-    {
-      title: 'Usuarios',
-      value: metrics.totalUsers,
-      icon: Users,
-      color: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      trend: 'Registrados',
-    },
-    {
-      title: 'Sucursales',
-      value: metrics.totalBranches,
-      icon: Building2,
-      color: 'bg-gradient-to-br from-secondary to-pink-600',
-      trend: 'Activas',
-    },
+  const pct = metrics.totalShipments > 0
+    ? Math.round((metrics.deliveredShipments / metrics.totalShipments) * 100)
+    : 0;
+
+  const cards = [
+    { title: 'Total Envíos',  value: metrics.totalShipments,    Icon: Package,    bg: 'linear-gradient(135deg,#1E8A4C,#0B5C30)', trend: '+12% este mes',                   trendUp: true  },
+    { title: 'En Tránsito',   value: metrics.activeShipments,   Icon: Truck,      bg: 'linear-gradient(135deg,#3B82F6,#1D4ED8)', trend: `${metrics.activeShipments} activos`, trendUp: true  },
+    { title: 'Entregados',    value: metrics.deliveredShipments, Icon: CheckCircle,bg: 'linear-gradient(135deg,#10B981,#059669)', trend: `${pct}% total`,                  trendUp: true  },
+    { title: 'Pendientes',    value: metrics.pendingShipments,  Icon: Clock,      bg: 'linear-gradient(135deg,#F59E0B,#D97706)', trend: `${metrics.pendingShipments} por entregar`, trendUp: false },
+    { title: 'Usuarios',      value: metrics.totalUsers,        Icon: Users,      bg: 'linear-gradient(135deg,#8B5CF6,#7C3AED)', trend: 'Registrados' },
+    { title: 'Sucursales',    value: metrics.totalBranches,     Icon: Building2,  bg: 'linear-gradient(135deg,#EC4899,#DB2777)', trend: 'Activas' },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {metricsData.map((metric) => (
-        <MetricsCard key={metric.title} {...metric} />
-      ))}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }} className="metrics-grid">
+      <style>{`@media(max-width:900px){.metrics-grid{grid-template-columns:repeat(2,1fr)}} @media(max-width:500px){.metrics-grid{grid-template-columns:1fr}}`}</style>
+      {cards.map(c => <MetricCard key={c.title} {...c} />)}
     </div>
   );
 };

@@ -4,226 +4,212 @@ import { MessageCircle, X, Send, Bot, User, Minimize2, Sparkles } from 'lucide-r
 import { useChatStore } from '../../stores/chatStore';
 import { TypingIndicator } from '../ui/Spinner';
 
+const SUGGESTED = ['¿Dónde está mi envío?', 'Crear nuevo envío', 'Horarios de atención'];
+
 export const ChatWidget = () => {
   const { isOpen, toggleChat, messages, isTyping, sendMessage } = useChatStore();
-  const [inputValue, setInputValue] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState('');
+  const endRef   = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
+  useEffect(() => { if (isOpen) setTimeout(() => inputRef.current?.focus(), 250); }, [isOpen]);
+
+  const submit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!input.trim() || isTyping) return;
+    const msg = input.trim();
+    setInput('');
+    await sendMessage(msg);
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 300);
-    }
-  }, [isOpen]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputValue.trim() && !isTyping) {
-      await sendMessage(inputValue.trim());
-      setInputValue('');
-    }
-  };
-
-  const suggestedActions = [
-    '¿Dónde está mi envío?',
-    'Crear nuevo envío',
-    'Horarios de atención',
-  ];
 
   return (
     <>
-      {/* Floating Button */}
+      {/* ── FAB button ── */}
       <motion.button
-        id="chat-widget"
         onClick={toggleChat}
-        className="fixed bottom-6 right-6 z-50 cursor-pointer group"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.94 }}
+        style={{
+          position: 'fixed', bottom: 28, right: 28, zIndex: 50,
+          width: 56, height: 56, borderRadius: '50%', border: 'none',
+          background: isOpen ? '#1E293B' : 'linear-gradient(135deg, #1E8A4C, #0B1410)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: isOpen ? '0 4px 20px rgba(0,0,0,0.25)' : '0 4px 20px rgba(30,138,76,0.35)',
+          transition: 'background 0.2s, box-shadow 0.2s',
+        }}
       >
-        <div className="relative">
-          {/* Pulse ring */}
-          {!isOpen && (
-            <div className="absolute inset-0 rounded-full bg-brand-green-600 animate-pulse-glow" />
-          )}
-          {/* Button */}
-          <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
-            isOpen
-              ? 'bg-neutral-800 shadow-neutral-900/20'
-              : 'bg-gradient-to-br from-brand-green-600 to-brand-green-900 shadow-brand-green-600/30 group-hover:shadow-brand-green-600/40'
-          }`}>
-            <AnimatePresence mode="wait">
-              {isOpen ? (
-                <motion.div
-                  key="close"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <X className="w-5 h-5 text-white" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="chat"
-                  initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -90, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <MessageCircle className="w-5 h-5 text-white" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+        {/* pulse ring when closed */}
+        {!isOpen && (
+          <span style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            background: 'rgba(30,138,76,0.3)', animation: 'pulse-glow 2s ease-in-out infinite',
+          }} />
+        )}
+        <AnimatePresence mode="wait">
+          {isOpen
+            ? <motion.div key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                <X style={{ width: 20, height: 20, color: 'white' }} />
+              </motion.div>
+            : <motion.div key="chat" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                <MessageCircle style={{ width: 20, height: 20, color: 'white' }} />
+              </motion.div>
+          }
+        </AnimatePresence>
       </motion.button>
 
-      {/* Chat Panel */}
+      {/* ── Chat panel ── */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 8 }}
+            initial={{ opacity: 0, scale: 0.94, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            exit={{ opacity: 0, scale: 0.94, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed bottom-24 right-6 w-[380px] max-h-[70vh] max-h-[calc(70vh-env(safe-area-inset-bottom,0px))] z-50 flex flex-col overflow-hidden"
+            style={{
+              position: 'fixed', bottom: 96, right: 28, zIndex: 50,
+              width: 370, maxHeight: '68vh',
+              display: 'flex', flexDirection: 'column',
+              background: 'white', borderRadius: 20,
+              border: '1px solid rgba(0,0,0,0.08)',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08)',
+              overflow: 'hidden',
+            }}
           >
-            {/* Outer shell (double-bezel) */}
-            <div className="flex-1 flex flex-col bg-white rounded-3xl shadow-xl border border-neutral-200/80 overflow-hidden">
-              {/* Header */}
-              <div className="relative bg-brand-green-600 p-4 flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                    <Bot className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-brand-green-600" />
+            {/* header */}
+            <div style={{ background: 'var(--color-primary)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+              <div style={{ position: 'relative' }}>
+                <div style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Bot style={{ width: 19, height: 19, color: 'white' }} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-semibold text-sm">Servibot AI</h3>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                    <span className="text-white/70 text-[11px]">En línea</span>
-                  </div>
-                </div>
-                <button
-                  onClick={toggleChat}
-                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <Minimize2 className="w-4 h-4 text-white" />
-                </button>
+                <div style={{ position: 'absolute', bottom: -2, right: -2, width: 11, height: 11, background: '#10B981', borderRadius: '50%', border: '2px solid var(--color-primary)' }} />
               </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-neutral-50/50">
-                {messages.length === 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center py-6"
-                  >
-                    <div className="w-16 h-16 bg-gradient-to-br from-brand-green-600/10 to-brand-green-600/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Sparkles className="w-8 h-8 text-brand-green-600" />
-                    </div>
-                    <p className="font-bold text-neutral-900 mb-1 font-display">¡Hola! Soy Servibot AI</p>
-                    <p className="text-xs text-neutral-400 px-4 leading-relaxed">
-                      ¿Cómo puedo ayudarte hoy? Puedo ayudarte con envíos, seguimiento y más.
-                    </p>
-                    {/* Suggested actions */}
-                    <div className="mt-4 space-y-2 px-2">
-                      {suggestedActions.map((action, i) => (
-                        <motion.button
-                          key={action}
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.3 + i * 0.1 }}
-                          onClick={() => {
-                            setInputValue(action);
-                            setTimeout(() => inputRef.current?.focus(), 100);
-                          }}
-                          className="w-full px-3 py-2 bg-white border border-neutral-100 rounded-xl text-xs text-neutral-600 hover:border-brand-green-600/30 hover:text-brand-green-600 transition-all duration-200 cursor-pointer"
-                        >
-                          {action}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {messages.map((message) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    {message.role === 'assistant' && (
-                      <div className="w-7 h-7 bg-brand-green-600/10 rounded-lg flex items-center justify-center flex-shrink-0 mr-2 mt-1">
-                        <Bot className="w-3.5 h-3.5 text-brand-green-600" />
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-[75%] px-4 py-2.5 text-sm leading-relaxed ${
-                        message.role === 'user'
-                          ? 'bg-brand-green-600 text-white rounded-2xl rounded-br-md shadow-sm shadow-brand-green-600/10'
-                          : 'bg-white text-neutral-dark rounded-2xl rounded-bl-md border border-neutral-100 shadow-sm'
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap">{message.content}</p>
-                    </div>
-                    {message.role === 'user' && (
-                      <div className="w-7 h-7 bg-neutral-200 rounded-lg flex items-center justify-center flex-shrink-0 ml-2 mt-1">
-                        <User className="w-3.5 h-3.5 text-neutral-500" />
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
-
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="w-7 h-7 bg-brand-green-600/10 rounded-lg flex items-center justify-center flex-shrink-0 mr-2">
-                      <Bot className="w-3.5 h-3.5 text-brand-green-600" />
-                    </div>
-                    <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-md border border-neutral-100 shadow-sm">
-                      <TypingIndicator />
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input */}
-              <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-neutral-100">
-                <div className="flex gap-2 items-center">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Escribe tu mensaje..."
-                    className="flex-1 h-10 px-4 bg-neutral-100 border border-neutral-200 rounded-xl text-sm text-neutral-dark placeholder-neutral-400 focus:ring-2 focus:ring-brand-green-400/20 focus:border-brand-green-600 focus:bg-white outline-none transition-all duration-200"
-                    disabled={isTyping}
-                  />
-                  <motion.button
-                    type="submit"
-                    disabled={!inputValue.trim() || isTyping}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-10 h-10 bg-brand-green-600 rounded-xl flex items-center justify-center shadow-md shadow-brand-green-600/20 hover:shadow-lg hover:shadow-brand-green-600/30 transition-all duration-200 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <Send className="w-4 h-4 text-white" />
-                  </motion.button>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'white', lineHeight: 1.2 }}>Servibot AI</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                  <div style={{ width: 6, height: 6, background: '#10B981', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.70)' }}>En línea · responde al instante</span>
                 </div>
-              </form>
+              </div>
+              <button onClick={toggleChat} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.12)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Minimize2 style={{ width: 15, height: 15, color: 'white' }} />
+              </button>
             </div>
+
+            {/* messages */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 8px', background: '#F8FAFB', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+              {/* empty state */}
+              {messages.length === 0 && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: 'center', padding: '20px 8px' }}>
+                  <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg, rgba(30,138,76,0.12), rgba(30,138,76,0.06))', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                    <Sparkles style={{ width: 26, height: 26, color: 'var(--color-primary)' }} />
+                  </div>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: 'var(--color-neutral-900)', margin: '0 0 6px' }}>¡Hola! Soy Servibot AI</p>
+                  <p style={{ fontSize: 12, color: 'var(--color-neutral-400)', lineHeight: 1.6, margin: '0 0 16px', padding: '0 12px' }}>
+                    ¿Cómo puedo ayudarte hoy? Puedo ayudarte con envíos, seguimiento y más.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    {SUGGESTED.map((s, i) => (
+                      <motion.button
+                        key={s}
+                        initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.08 }}
+                        onClick={() => { setInput(s); setTimeout(() => inputRef.current?.focus(), 80); }}
+                        style={{
+                          width: '100%', padding: '9px 14px', fontSize: 12,
+                          background: 'white', border: '1px solid var(--color-neutral-200)',
+                          borderRadius: 10, color: 'var(--color-neutral-600)', cursor: 'pointer',
+                          textAlign: 'left', transition: 'border-color 0.15s, color 0.15s',
+                        }}
+                      >{s}</motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* message list */}
+              {messages.map(m => (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                  style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 8, alignItems: 'flex-end' }}
+                >
+                  {m.role === 'assistant' && (
+                    <div style={{ width: 26, height: 26, background: 'rgba(30,138,76,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginBottom: 2 }}>
+                      <Bot style={{ width: 13, height: 13, color: 'var(--color-primary)' }} />
+                    </div>
+                  )}
+                  <div style={{
+                    maxWidth: '76%', padding: '9px 14px', fontSize: 13, lineHeight: 1.55,
+                    background: m.role === 'user' ? 'var(--color-primary)' : 'white',
+                    color: m.role === 'user' ? 'white' : 'var(--color-neutral-800)',
+                    borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    border: m.role === 'assistant' ? '1px solid var(--color-neutral-200)' : 'none',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                  }}>
+                    <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{m.content}</p>
+                  </div>
+                  {m.role === 'user' && (
+                    <div style={{ width: 26, height: 26, background: 'var(--color-neutral-200)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginBottom: 2 }}>
+                      <User style={{ width: 13, height: 13, color: 'var(--color-neutral-500)' }} />
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+
+              {/* typing */}
+              {isTyping && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <div style={{ width: 26, height: 26, background: 'rgba(30,138,76,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Bot style={{ width: 13, height: 13, color: 'var(--color-primary)' }} />
+                  </div>
+                  <div style={{ background: 'white', border: '1px solid var(--color-neutral-200)', borderRadius: '16px 16px 16px 4px', padding: '10px 14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                    <TypingIndicator />
+                  </div>
+                </div>
+              )}
+              <div ref={endRef} />
+            </div>
+
+            {/* input */}
+            <form onSubmit={submit} style={{ padding: '10px 12px', background: 'white', borderTop: '1px solid var(--color-neutral-100)', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  placeholder="Escribe tu mensaje..."
+                  disabled={isTyping}
+                  style={{
+                    flex: 1, height: 40, padding: '0 14px',
+                    background: 'var(--color-neutral-50)',
+                    border: '1px solid var(--color-neutral-200)',
+                    borderRadius: 10, fontSize: 13,
+                    color: 'var(--color-neutral-900)', outline: 'none',
+                    transition: 'border-color 0.15s',
+                  }}
+                />
+                <motion.button
+                  type="submit"
+                  disabled={!input.trim() || isTyping}
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.94 }}
+                  style={{
+                    width: 40, height: 40, flexShrink: 0,
+                    background: 'var(--color-primary)', border: 'none',
+                    borderRadius: 10, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    opacity: (!input.trim() || isTyping) ? 0.45 : 1,
+                    transition: 'opacity 0.15s',
+                  }}
+                >
+                  <Send style={{ width: 16, height: 16, color: 'white' }} />
+                </motion.button>
+              </div>
+              <p style={{ margin: '6px 0 0', fontSize: 10, color: 'var(--color-neutral-400)', textAlign: 'center' }}>
+                ServiBot AI · Powered by Anthropic Claude
+              </p>
+            </form>
           </motion.div>
         )}
       </AnimatePresence>
