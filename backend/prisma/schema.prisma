@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum RolUsuario {
+  ADMIN
+  OPERATOR
+}
+
+enum EstadoEnvio {
+  PENDIENTE
+  RECOGIDO
+  EN_TRANSITO
+  EN_SUCURSAL
+  EN_ENTREGA
+  ENTREGADO
+  CANCELADO
+}
+
+enum EstadoSeguimiento {
+  ORDEN_CREADA
+  RECOLECCION_PROGRAMADA
+  RECOGIDO
+  EN_TRANSITO
+  LLEGO_SUCURSAL
+  EN_ADUANA
+  EN_ENTREGA
+  ENTREGADO
+  DEVUELTO
+  CANCELADO
+}
+
+// ============================================
+// MODELOS
+// ============================================
+
+model Usuario {
+  id            Int           @id @default(autoincrement())
+  nombre        String
+  email         String        @unique
+  password      String
+  rol           RolUsuario    @default(OPERATOR)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  envios        Envio[]
+}
+
+model Envio {
+  id                    Int             @id @default(autoincrement())
+  numeroGuia            String          @unique
+
+  // Usuario que creo el envio
+  creadoPorId           Int?
+  creadoPor             Usuario?        @relation(fields: [creadoPorId], references: [id])
+
+  // Datos del remitente
+  remitenteNombre       String
+  remitenteTelefono     String
+  remitenteDireccion    String
+
+  // Datos del destinatario
+  destinatarioNombre    String
+  destinatarioTelefono  String
+  destinatarioDireccion String
+
+  // Datos del envio
+  origen                String
+  destino               String
+  peso                  Float
+  tipoProducto          String?
+
+  // Costos
+  costoEnvio            Float?
+
+  // Estado
+  estado                EstadoEnvio     @default(PENDIENTE)
+
+  // Sucursal actual
+  sucursalId            Int?
+  sucursal              Sucursal?       @relation(fields: [sucursalId], references: [id])
+
+  // Timestamps
+  fechaCreacion         DateTime        @default(now())
+  fechaRecoleccion      DateTime?
+  fechaEntrega          DateTime?
+  updatedAt             DateTime        @updatedAt
+
+  // Relaciones
+  seguimientos          Seguimiento[]
+
+  @@index([numeroGuia])
+  @@index([estado])
+  @@index([creadoPorId])
+}
+
+model Seguimiento {
+  id              Int               @id @default(autoincrement())
+  envioId         Int
+  envio           Envio             @relation(fields: [envioId], references: [id], onDelete: Cascade)
+
+  // Datos del movimiento
+  estado          EstadoSeguimiento
+  sucursalId      Int?
+  sucursal        Sucursal?         @relation(fields: [sucursalId], references: [id])
+  ubicacion       String
+  descripcion     String
+  observaciones   String?
+
+  // Timestamps
+  fecha           DateTime          @default(now())
+
+  @@index([envioId, fecha])
+}
+
+model Sucursal {
+  id            Int         @id @default(autoincrement())
+  nombre        String      @unique
+  codigo        String      @unique
+  ciudad        String
+  direccion     String
+  telefono      String?
+  activa        Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  envios        Envio[]
+  seguimientos  Seguimiento[]
+
+  @@index([ciudad])
+}
+
+model TarifaEnvio {
+  id              Int       @id @default(autoincrement())
+
+  // Ruta
+  ciudadOrigen    String
+  ciudadDestino   String
+
+  // Costos
+  tarifaDocumento Float
+  tarifaKg        Float
+  tarifaMinima    Float
+
+  // Limites
+  pesoMaximo      Float     @default(30)
+
+  // Estado
+  activa          Boolean   @default(true)
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([ciudadOrigen, ciudadDestino])
+  @@index([ciudadOrigen, ciudadDestino])
+}

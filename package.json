@@ -1,0 +1,30 @@
+{
+  "name": "servibot-ai",
+  "version": "1.0.0",
+  "description": "Plataforma Inteligente de Atención y Gestión Logística para Servientrega",
+  "scripts": {
+    "start:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-dev.ps1",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm run start",
+    "start:frontend": "cd frontend && npm run build && npm run preview",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "db:up": "docker-compose up -d",
+    "db:down": "docker-compose down",
+    "db:restart": "docker-compose down -v && docker-compose up -d",
+    "db:push": "cd backend && npx prisma db push",
+    "db:seed": "cd backend && npm run db:seed",
+    "db:studio": "cd backend && npx prisma studio",
+    "db:reset": "docker-compose down -v && docker-compose up -d && timeout 10 && npm run db:push && npm run db:seed",
+    "logs": "docker-compose logs -f",
+    "status": "docker-compose ps"
+  },
+  "keywords": ["servientrega", "chatbot", "ai", "logistics"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
