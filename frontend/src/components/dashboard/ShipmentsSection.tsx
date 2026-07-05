@@ -6,13 +6,12 @@ import type { Shipment, EstadoEnvio, CreateShipmentInput } from '../../types';
 
 /* ── Status config ── */
 const STATUS: Record<EstadoEnvio, { label: string; color: string; bg: string }> = {
-  PENDIENTE:   { label: 'Pendiente',    color: '#92400E', bg: '#FEF3C7' },
-  RECOGIDO:    { label: 'Recogido',     color: '#1D4ED8', bg: '#DBEAFE' },
-  EN_TRANSITO: { label: 'En Tránsito', color: '#1D4ED8', bg: '#DBEAFE' },
-  EN_SUCURSAL: { label: 'En Sucursal', color: '#5B21B6', bg: '#EDE9FE' },
-  EN_ENTREGA:  { label: 'En Entrega',  color: '#0E7490', bg: '#CFFAFE' },
-  ENTREGADO:   { label: 'Entregado',   color: '#065F46', bg: '#D1FAE5' },
-  CANCELADO:   { label: 'Cancelado',   color: '#991B1B', bg: '#FEE2E2' },
+  GENERADO:         { label: 'Generado',         color: '#92400E', bg: '#FEF3C7' },
+  RECIBIDO_AGENCIA: { label: 'Recibido Agencia', color: '#1D4ED8', bg: '#DBEAFE' },
+  EN_TRANSITO:      { label: 'En Tránsito',      color: '#5B21B6', bg: '#EDE9FE' },
+  EN_DISTRIBUCION:  { label: 'En Distribución',  color: '#0E7490', bg: '#CFFAFE' },
+  ENTREGADO:        { label: 'Entregado',        color: '#065F46', bg: '#D1FAE5' },
+  CANCELADO:        { label: 'Cancelado',        color: '#991B1B', bg: '#FEE2E2' },
 };
 
 const ESTADOS = Object.entries(STATUS) as [EstadoEnvio, typeof STATUS[EstadoEnvio]][];
@@ -178,17 +177,37 @@ const UpdateStatusModal = ({ shipment, onClose }: { shipment: Shipment; onClose:
   const [ubicacion, setUbicacion] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const getAutoUbicacion = (nuevoEstado: EstadoEnvio): string => {
+    switch (nuevoEstado) {
+      case 'RECIBIDO_AGENCIA':
+        return `Servientrega ${shipment.destino} - Centro de Soluciones`;
+      case 'EN_DISTRIBUCION':
+        return `En distribución - ${shipment.destino}`;
+      case 'ENTREGADO':
+        return shipment.destinatarioDireccion || 'Entregado en destino';
+      default:
+        return '';
+    }
+  };
+
+  const handleEstadoChange = (nuevoEstado: EstadoEnvio) => {
+    setEstado(nuevoEstado);
+    const autoUbicacion = getAutoUbicacion(nuevoEstado);
+    setUbicacion(autoUbicacion);
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ubicacion.trim()) return;
     setSaving(true);
     try {
-      await updateStatus(shipment.id, estado, ubicacion);
+      await updateStatus(shipment.id, estado, ubicacion || undefined);
       onClose();
     } finally {
       setSaving(false);
     }
   };
+
+  const isAutoFilled = ['RECIBIDO_AGENCIA', 'EN_DISTRIBUCION', 'ENTREGADO'].includes(estado);
 
   return (
     <Modal onClose={onClose}>
@@ -202,21 +221,31 @@ const UpdateStatusModal = ({ shipment, onClose }: { shipment: Shipment; onClose:
           <span style={{ marginLeft: 12 }}><StatusBadge estado={shipment.estado} /></span>
         </div>
         <Field label="Nuevo estado">
-          <select value={estado} onChange={e => setEstado(e.target.value as EstadoEnvio)} style={INPUT}>
+          <select value={estado} onChange={e => handleEstadoChange(e.target.value as EstadoEnvio)} style={INPUT}>
             {ESTADOS.map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
         </Field>
-        <Field label="Ubicación actual">
+        <Field label={isAutoFilled ? 'Ubicación (auto-completada)' : 'Ubicación'}>
           <input
             value={ubicacion} onChange={e => setUbicacion(e.target.value)}
-            required style={INPUT} placeholder="Ej: Quito - Bodega Central"
+            style={{
+              ...INPUT,
+              background: isAutoFilled ? '#F0FDF4' : 'white',
+              borderColor: isAutoFilled ? '#86EFAC' : undefined,
+            }}
+            placeholder="Ej: Quito - Bodega Central"
           />
+          {isAutoFilled && (
+            <span style={{ fontSize: 11, color: '#059669', marginTop: 4, display: 'block' }}>
+              ✓ Ubicación auto-completada según el estado seleccionado
+            </span>
+          )}
         </Field>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 4 }}>
           <button type="button" onClick={onClose} style={{ padding: '9px 20px', fontSize: 13, fontWeight: 500, background: 'var(--color-neutral-100)', border: 'none', borderRadius: 10, cursor: 'pointer', color: 'var(--color-neutral-600)' }}>
             Cancelar
           </button>
-          <button type="submit" disabled={saving || !ubicacion.trim()} style={{ padding: '9px 20px', fontSize: 13, fontWeight: 600, background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: 10, cursor: 'pointer', opacity: (saving || !ubicacion.trim()) ? 0.5 : 1 }}>
+          <button type="submit" disabled={saving} style={{ padding: '9px 20px', fontSize: 13, fontWeight: 600, background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: 10, cursor: 'pointer', opacity: saving ? 0.5 : 1 }}>
             {saving ? 'Guardando...' : 'Actualizar'}
           </button>
         </div>
@@ -336,7 +365,7 @@ export const ShipmentsSection = () => {
                     <td style={{ padding: '12px 16px', color: 'var(--color-neutral-500)', whiteSpace: 'nowrap' }}>{s.peso} kg</td>
                     <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}><StatusBadge estado={s.estado} /></td>
                     <td style={{ padding: '12px 16px', color: 'var(--color-neutral-400)', fontSize: 12, whiteSpace: 'nowrap' }}>
-                      {new Date(s.fechaCreacion).toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(s.fechaCreacion).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
                     <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                       <button

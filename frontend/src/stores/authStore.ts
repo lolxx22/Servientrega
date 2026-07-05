@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { User } from '../types';
 import { authService } from '../services/auth.service';
+import { useChatStore } from './chatStore';
 
 interface AuthState {
   user: User | null;
@@ -35,6 +36,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       const result = await authService.login(email, password);
       localStorage.setItem('token', result.token);
       localStorage.setItem('user', JSON.stringify(result.user));
+      // Limpiar chat al iniciar sesión
+      useChatStore.getState().clearMessages();
       set({
         user: result.user,
         token: result.token,
@@ -61,6 +64,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Limpiar chat al cerrar sesión
+    useChatStore.getState().clearMessages();
     set({
       user: null,
       token: null,

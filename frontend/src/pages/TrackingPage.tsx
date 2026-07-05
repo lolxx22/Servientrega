@@ -14,13 +14,12 @@ import { Spinner } from '../components/ui/Spinner';
 
 /* ── Status config usando los enums reales de Prisma/backend ── */
 const STATUS_MAP: Record<string, { label: string; variant: 'warning' | 'info' | 'success' | 'danger' | 'default'; icon: typeof Truck; color: string; dot: string }> = {
-  PENDIENTE:    { label: 'Pendiente',       variant: 'warning', icon: Clock,        color: '#F59E0B', dot: '#F59E0B' },
-  RECOGIDO:     { label: 'Recogido',        variant: 'info',    icon: Package,      color: '#3B82F6', dot: '#3B82F6' },
-  EN_TRANSITO:  { label: 'En Tránsito',    variant: 'info',    icon: Truck,        color: '#3B82F6', dot: '#3B82F6' },
-  EN_SUCURSAL:  { label: 'En Sucursal',    variant: 'info',    icon: MapPin,       color: '#8B5CF6', dot: '#8B5CF6' },
-  EN_ENTREGA:   { label: 'En Entrega',     variant: 'info',    icon: ArrowRight,   color: '#06B6D4', dot: '#06B6D4' },
-  ENTREGADO:    { label: 'Entregado',       variant: 'success', icon: CheckCircle,  color: '#10B981', dot: '#10B981' },
-  CANCELADO:    { label: 'Cancelado',       variant: 'danger',  icon: AlertCircle,  color: '#EF4444', dot: '#EF4444' },
+  GENERADO:         { label: 'Generado',         variant: 'warning', icon: FileText,     color: '#F59E0B', dot: '#F59E0B' },
+  RECIBIDO_AGENCIA: { label: 'Recibido Agencia', variant: 'info',    icon: Package,      color: '#3B82F6', dot: '#3B82F6' },
+  EN_TRANSITO:      { label: 'En Tránsito',      variant: 'info',    icon: Truck,        color: '#8B5CF6', dot: '#8B5CF6' },
+  EN_DISTRIBUCION:  { label: 'En Distribución',  variant: 'info',    icon: ArrowRight,   color: '#06B6D4', dot: '#06B6D4' },
+  ENTREGADO:        { label: 'Entregado',        variant: 'success', icon: CheckCircle,  color: '#10B981', dot: '#10B981' },
+  CANCELADO:        { label: 'Cancelado',        variant: 'danger',  icon: AlertCircle,  color: '#EF4444', dot: '#EF4444' },
 };
 
 const DEFAULT_STATUS = { label: 'Desconocido', variant: 'default' as const, icon: CircleDot, color: '#9BA3AE', dot: '#9BA3AE' };
@@ -30,7 +29,7 @@ function getStatus(estado: string) {
 }
 
 function fmtDate(d: string, opts?: Intl.DateTimeFormatOptions) {
-  return new Date(d).toLocaleDateString('es-EC', opts ?? { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(d).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', ...opts });
 }
 
 export const TrackingPage = () => {

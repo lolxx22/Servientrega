@@ -21,7 +21,7 @@ export class DashboardService {
       envioRepository.count(),
       envioRepository.countByStatus('EN_TRANSITO' as EstadoEnvio),
       envioRepository.countByStatus('ENTREGADO' as EstadoEnvio),
-      envioRepository.countByStatus('PENDIENTE' as EstadoEnvio),
+      envioRepository.countByStatus('GENERADO' as EstadoEnvio),
       sucursalRepository.count(),
     ]);
 
@@ -37,18 +37,22 @@ export class DashboardService {
 
   async getChartData() {
     const shipmentsByStatus = await Promise.all([
-      envioRepository.countByStatus('PENDIENTE' as EstadoEnvio),
+      envioRepository.countByStatus('GENERADO' as EstadoEnvio),
+      envioRepository.countByStatus('RECIBIDO_AGENCIA' as EstadoEnvio),
       envioRepository.countByStatus('EN_TRANSITO' as EstadoEnvio),
+      envioRepository.countByStatus('EN_DISTRIBUCION' as EstadoEnvio),
       envioRepository.countByStatus('ENTREGADO' as EstadoEnvio),
       envioRepository.countByStatus('CANCELADO' as EstadoEnvio),
     ]);
 
     return {
       shipmentsByStatus: [
-        { name: 'Pendiente', value: shipmentsByStatus[0], color: '#F59E0B' },
-        { name: 'En Transito', value: shipmentsByStatus[1], color: '#3B82F6' },
-        { name: 'Entregado', value: shipmentsByStatus[2], color: '#10B981' },
-        { name: 'Cancelado', value: shipmentsByStatus[3], color: '#EF4444' },
+        { name: 'Generado', value: shipmentsByStatus[0], color: '#F59E0B' },
+        { name: 'Recibido Agencia', value: shipmentsByStatus[1], color: '#3B82F6' },
+        { name: 'En Tránsito', value: shipmentsByStatus[2], color: '#8B5CF6' },
+        { name: 'En Distribución', value: shipmentsByStatus[3], color: '#06B6D4' },
+        { name: 'Entregado', value: shipmentsByStatus[4], color: '#10B981' },
+        { name: 'Cancelado', value: shipmentsByStatus[5], color: '#EF4444' },
       ],
       shipmentsByCity: [
         { city: 'Quito', count: 45 },

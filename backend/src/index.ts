@@ -2,9 +2,11 @@ import app from './infrastructure/http/express/app';
 import { env } from './config/env';
 import { prisma } from './config/database';
 
+// ID único de esta instancia del servidor (cambia al reiniciar)
+export const INSTANCE_ID = Date.now().toString();
+
 const startServer = async () => {
   try {
-    // Test database connection
     await prisma.$connect();
     console.log('✅ Conexión a PostgreSQL establecida');
 
@@ -14,6 +16,7 @@ const startServer = async () => {
       console.log(`🚀 Servidor Servibot AI ejecutándose en puerto ${PORT}`);
       console.log(`📡 Environment: ${env.NODE_ENV}`);
       console.log(`🌐 URL: http://localhost:${PORT}`);
+      console.log(`🔑 Instance ID: ${INSTANCE_ID}`);
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);

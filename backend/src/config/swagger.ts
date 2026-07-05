@@ -266,25 +266,25 @@ const swaggerSpec: Record<string, unknown> & { openapi: string; info: Record<str
                     estado: 'ENTREGADO',
                   },
                 },
-                recogido: {
-                  summary: 'Marcar como recogido',
+                recibido_agencia: {
+                  summary: 'Marcar como recibido en agencia',
                   value: {
-                    estado: 'RECOGIDO',
-                    ubicacion: 'Oficina central Guayaquil',
+                    estado: 'RECIBIDO_AGENCIA',
+                    ubicacion: 'Servientrega Guayaquil - Av. Juan Tanca Marengo',
                   },
                 },
-                en_sucursal: {
-                  summary: 'Marcar llegada a sucursal',
+                en_transito: {
+                  summary: 'Marcar en tránsito',
                   value: {
-                    estado: 'EN_SUCURSAL',
-                    ubicacion: 'Sucursal Cuenca',
+                    estado: 'EN_TRANSITO',
+                    ubicacion: 'Centro logístico Quito',
                   },
                 },
-                en_entrega: {
-                  summary: 'Marcar en ruta de entrega',
+                en_distribucion: {
+                  summary: 'Marcar en distribución',
                   value: {
-                    estado: 'EN_ENTREGA',
-                    ubicacion: 'Zona norte Guayaquil',
+                    estado: 'EN_DISTRIBUCION',
+                    ubicacion: 'En distribución - Guayaquil',
                   },
                 },
                 cancelado: {
@@ -438,11 +438,10 @@ const swaggerSpec: Record<string, unknown> & { openapi: string; info: Record<str
       EstadoEnvio: {
         type: 'string',
         enum: [
-          'PENDIENTE',
-          'RECOGIDO',
+          'GENERADO',
+          'RECIBIDO_AGENCIA',
           'EN_TRANSITO',
-          'EN_SUCURSAL',
-          'EN_ENTREGA',
+          'EN_DISTRIBUCION',
           'ENTREGADO',
           'CANCELADO',
         ],

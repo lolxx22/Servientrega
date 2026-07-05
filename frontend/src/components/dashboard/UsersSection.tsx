@@ -150,7 +150,7 @@ export const UsersSection = () => {
                     <td style={{ padding: '12px 16px', color: 'var(--color-neutral-500)' }}>{u.email}</td>
                     <td style={{ padding: '12px 16px' }}><RoleBadge rol={u.rol} /></td>
                     <td style={{ padding: '12px 16px', color: 'var(--color-neutral-400)', fontSize: 12, whiteSpace: 'nowrap' }}>
-                      {new Date(u.createdAt).toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(u.createdAt).toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       {currentUser?.id !== u.id ? (

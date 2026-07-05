@@ -17,25 +17,20 @@ enum RolUsuario {
 }
 
 enum EstadoEnvio {
-  PENDIENTE
-  RECOGIDO
+  GENERADO
+  RECIBIDO_AGENCIA
   EN_TRANSITO
-  EN_SUCURSAL
-  EN_ENTREGA
+  EN_DISTRIBUCION
   ENTREGADO
   CANCELADO
 }
 
 enum EstadoSeguimiento {
   ORDEN_CREADA
-  RECOLECCION_PROGRAMADA
-  RECOGIDO
+  RECIBIDO_AGENCIA
   EN_TRANSITO
-  LLEGO_SUCURSAL
-  EN_ADUANA
-  EN_ENTREGA
+  EN_DISTRIBUCION
   ENTREGADO
-  DEVUELTO
   CANCELADO
 }
 
@@ -83,7 +78,7 @@ model Envio {
   costoEnvio            Float?
 
   // Estado
-  estado                EstadoEnvio     @default(PENDIENTE)
+  estado                EstadoEnvio     @default(GENERADO)
 
   // Sucursal actual
   sucursalId            Int?

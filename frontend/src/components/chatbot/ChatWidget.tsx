@@ -4,10 +4,10 @@ import { MessageCircle, X, Send, Bot, User, Minimize2, Sparkles } from 'lucide-r
 import { useChatStore } from '../../stores/chatStore';
 import { TypingIndicator } from '../ui/Spinner';
 
-const SUGGESTED = ['¿Dónde está mi envío?', 'Crear nuevo envío', 'Horarios de atención'];
+const SUGGESTED = ['Crear guía', 'Rastrear envío', 'Consultar precio'];
 
 export const ChatWidget = () => {
-  const { isOpen, toggleChat, messages, isTyping, sendMessage } = useChatStore();
+  const { isOpen, toggleChat, messages, isTyping, sendMessage, clearMessages } = useChatStore();
   const [input, setInput] = useState('');
   const endRef   = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -132,28 +132,33 @@ export const ChatWidget = () => {
                 <motion.div
                   key={m.id}
                   initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                  style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 8, alignItems: 'flex-end' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 2 }}
                 >
-                  {m.role === 'assistant' && (
-                    <div style={{ width: 26, height: 26, background: 'rgba(30,138,76,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginBottom: 2 }}>
-                      <Bot style={{ width: 13, height: 13, color: 'var(--color-primary)' }} />
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '85%' }}>
+                    {m.role === 'assistant' && (
+                      <div style={{ width: 26, height: 26, background: 'rgba(30,138,76,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginBottom: 2 }}>
+                        <Bot style={{ width: 13, height: 13, color: 'var(--color-primary)' }} />
+                      </div>
+                    )}
+                    <div style={{
+                      maxWidth: '100%', padding: '9px 14px', fontSize: 13, lineHeight: 1.55,
+                      background: m.role === 'user' ? 'var(--color-primary)' : 'white',
+                      color: m.role === 'user' ? 'white' : 'var(--color-neutral-800)',
+                      borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                      border: m.role === 'assistant' ? '1px solid var(--color-neutral-200)' : 'none',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                    }}>
+                      <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{m.content}</p>
                     </div>
-                  )}
-                  <div style={{
-                    maxWidth: '76%', padding: '9px 14px', fontSize: 13, lineHeight: 1.55,
-                    background: m.role === 'user' ? 'var(--color-primary)' : 'white',
-                    color: m.role === 'user' ? 'white' : 'var(--color-neutral-800)',
-                    borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    border: m.role === 'assistant' ? '1px solid var(--color-neutral-200)' : 'none',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                  }}>
-                    <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{m.content}</p>
+                    {m.role === 'user' && (
+                      <div style={{ width: 26, height: 26, background: 'var(--color-neutral-200)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginBottom: 2 }}>
+                        <User style={{ width: 13, height: 13, color: 'var(--color-neutral-500)' }} />
+                      </div>
+                    )}
                   </div>
-                  {m.role === 'user' && (
-                    <div style={{ width: 26, height: 26, background: 'var(--color-neutral-200)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginBottom: 2 }}>
-                      <User style={{ width: 13, height: 13, color: 'var(--color-neutral-500)' }} />
-                    </div>
-                  )}
+                  <span style={{ fontSize: 10, color: 'var(--color-neutral-400)', margin: '0 34px', textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                    {new Date(m.timestamp).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' })}
+                  </span>
                 </motion.div>
               ))}
 

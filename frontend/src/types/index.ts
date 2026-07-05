@@ -7,8 +7,8 @@ export interface User {
 }
 
 export type EstadoEnvio =
-  | 'PENDIENTE' | 'RECOGIDO' | 'EN_TRANSITO' | 'EN_SUCURSAL'
-  | 'EN_ENTREGA' | 'ENTREGADO' | 'CANCELADO';
+  | 'GENERADO' | 'RECIBIDO_AGENCIA' | 'EN_TRANSITO'
+  | 'EN_DISTRIBUCION' | 'ENTREGADO' | 'CANCELADO';
 
 export interface Shipment {
   id: number;

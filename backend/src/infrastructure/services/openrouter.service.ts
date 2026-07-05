@@ -99,13 +99,38 @@ const tools: OpenAI.ChatCompletionTool[] = [
 // SYSTEM PROMPT SIMPLIFICADO EN ESPAÑOL
 // ============================================
 
-const systemPrompt = `Eres ServiBot AI de Servientrega. Ayudas con envios y seguimiento.
+const systemPrompt = `Eres ServiBot AI de Servientrega.
 
-FLUJO: 1) Pide origen y destino, 2) Datos remitente (nombre, tel, dir), 3) Datos destinatario, 4) Peso y tipo, 5) Calcula costo, 6) Confirma y crea guia.
+REGLAS PRINCIPALES:
+- Si te saludan: responde con un saludo breve y pregunta cómo ayudar.
+- Solo ayudo con temas de Servientrega (envíos, seguimiento, cotización).
 
-CIUDADES: Quito, Guayaquil, Cuenca, Ambato, Manta, Loja, Latacunga, Riobamba.
+FLUJO PARA CREAR GUÍA:
+1. Cuando pidan crear guía/envío, solicita TODOS los datos de una vez en este formato:
+   - Ciudad de origen
+   - Ciudad de destino
+   - Remitente: nombre, teléfono, dirección (corta)
+   - Destinatario: nombre, teléfono, dirección (corta)
+   - Peso en kilogramos
+   - Tipo de producto
+
+2. Cuando el usuario proporcione TODOS los datos:
+   - PRIMERO ejecuta la tool calculateShippingCost con origen, destino, peso y tipo
+   - Muestra el costo calculado al usuario
+   - Pide confirmación: "¿Confirmas crear la guía con costo $X.XX?"
+
+3. Cuando el usuario confirme (sí, confirmo, ok, dale):
+   - Ejecuta la tool createShipment con TODOS los datos incluyendo el costo
+   - Confirma con el número de guía generado
+
+4. Si hay error al crear la guía, muestra el error específico y pide verificar datos.
+
+TIPOS: Documento, Encomienda, Paquete, Caja, Electrodoméstico, Tecnología, Ropa, Muebles, Alimentos, Medicamentos, Frágil.
+
+CIUDADES (24): Quito, Guayaquil, Cuenca, Ambato, Portoviejo, Manta, Loja, Riobamba, Latacunga, Santo Domingo, Esmeraldas, Ibarra, Santa Elena, Salinas, Tulcán, Milagro, Babahoyo, Guaranda, Azogues, Macas, Puyo, Tena, Lago Agrio, Coca.
+
 GUIAS: SERVI-2026-XXXXXX.
-Responde breve en espanol. Fuera de contexto: "Solo ayudo con Servientrega."`;
+Responde breve en español.`;
 
 // ============================================
 // UTILIDADES
@@ -310,26 +335,38 @@ interface ChatResult {
 
 export class AIService {
   async chat(messages: OpenAI.ChatCompletionMessageParam[], userId?: number): Promise<ChatResult> {
-    // Compactar mensajes localmente (sin tokens)
     const compressedMessages = compactMessages(messages);
+    let currentMessages: OpenAI.ChatCompletionMessageParam[] = [
+      { role: 'system', content: systemPrompt },
+      ...compressedMessages,
+    ];
+    let totalTokens = 0;
+    const MAX_ROUNDS = 5;
 
-    const response = await openrouter.chat.completions.create({
-      model: 'anthropic/claude-3-haiku',
-      messages: [{ role: 'system', content: systemPrompt }, ...compressedMessages],
-      tools,
-      max_tokens: 300,
-    });
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      const response = await openrouter.chat.completions.create({
+        model: 'anthropic/claude-3-haiku',
+        messages: currentMessages,
+        tools,
+        max_tokens: 500,
+      });
 
-    const tokensUsed = response.usage?.total_tokens || 0;
-    const choice = response.choices[0];
-    const toolCalls = choice.message.tool_calls;
+      totalTokens += response.usage?.total_tokens || 0;
+      const choice = response.choices[0];
+      const toolCalls = choice.message.tool_calls;
 
-    if (toolCalls && toolCalls.length > 0) {
-      const updatedMessages: OpenAI.ChatCompletionMessageParam[] = [
-        ...compressedMessages,
-        choice.message,
-      ];
+      // No hay más tool calls → retornar respuesta final de texto
+      if (!toolCalls || toolCalls.length === 0) {
+        return {
+          content: choice.message.content || '',
+          tokensUsed: totalTokens,
+        };
+      }
 
+      // Agregar el mensaje del assistant con tool_calls al historial
+      currentMessages.push(choice.message);
+
+      // Ejecutar cada tool call
       for (const toolCall of toolCalls) {
         const args = safeJsonParse(toolCall.function.arguments) as Record<string, string | number | undefined>;
         let result: unknown;
@@ -338,9 +375,25 @@ export class AIService {
           case 'getTrackingInfo':
             try {
               const envio = await envioService.findByTrackingNumber(args.trackingNumber as string);
-              result = envio || { error: 'Guia no encontrada' };
-            } catch {
-              result = { error: 'Guia no encontrada' };
+              if (envio) {
+                result = {
+                  success: true,
+                  trackingNumber: envio.numeroGuia,
+                  status: envio.estado,
+                  location: envio.ubicacion,
+                  description: envio.descripcion,
+                  lastUpdate: envio.fechaUltimaActualizacion,
+                  estimatedDelivery: envio.fechaEstimadaEntrega,
+                };
+              } else {
+                result = { 
+                  error: `No se encontró la guía ${args.trackingNumber}`,
+                  suggestion: 'Verifica el número de guía e intenta de nuevo'
+                };
+              }
+            } catch (error) {
+              const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
+              result = { error: `Error al buscar la guía: ${errorMsg}` };
             }
             break;
 
@@ -354,18 +407,25 @@ export class AIService {
               );
               if (cost) {
                 result = {
+                  success: true,
                   origin: args.origin,
                   destination: args.destination,
                   weight: args.weight,
+                  productType: args.productType,
                   baseRate: cost.tarifaBase,
                   weightCost: cost.costoPeso,
                   totalCost: cost.costoTotal,
+                  message: `Costo de envío de ${args.origin} a ${args.destination}: $${cost.costoTotal.toFixed(2)}`,
                 };
               } else {
-                result = { error: 'No se encontro tarifa para esta ruta' };
+                result = { 
+                  error: `No se encontró tarifa para la ruta ${args.origin} → ${args.destination}`,
+                  suggestion: 'Verifica que ambas ciudades estén disponibles en nuestro sistema'
+                };
               }
-            } catch {
-              result = { error: 'Error al calcular el costo' };
+            } catch (error) {
+              const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
+              result = { error: `Error al calcular el costo: ${errorMsg}` };
             }
             break;
 
@@ -386,14 +446,26 @@ export class AIService {
               });
 
               result = {
+                success: true,
                 trackingNumber: numeroGuia,
                 origin: args.origin,
                 destination: args.destination,
+                weight: args.weight,
                 totalCost: args.cost,
                 status: 'CREADA',
+                message: `Guía ${numeroGuia} creada exitosamente`,
               };
-            } catch {
-              result = { error: 'Error al crear la guia' };
+            } catch (error) {
+              const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
+              result = { 
+                error: `Error al crear la guía: ${errorMsg}`,
+                details: {
+                  senderName: args.senderName,
+                  recipientName: args.recipientName,
+                  origin: args.origin,
+                  destination: args.destination,
+                }
+              };
             }
             break;
 
@@ -406,15 +478,29 @@ export class AIService {
                 branches = await sucursalService.findAll();
               }
 
-              result = branches.map((b) => ({
-                nombre: b.nombre,
-                codigo: b.codigo,
-                ciudad: b.ciudad,
-                direccion: b.direccion,
-                telefono: b.telefono,
-              }));
-            } catch {
-              result = { error: 'Error al obtener sucursales' };
+              if (branches && branches.length > 0) {
+                result = {
+                  success: true,
+                  count: branches.length,
+                  branches: branches.map((b) => ({
+                    nombre: b.nombre,
+                    codigo: b.codigo,
+                    ciudad: b.ciudad,
+                    direccion: b.direccion,
+                    telefono: b.telefono,
+                  })),
+                };
+              } else {
+                result = { 
+                  error: args.city 
+                    ? `No se encontraron sucursales en ${args.city}` 
+                    : 'No se encontraron sucursales',
+                  suggestion: 'Intenta con otra ciudad o solicita información al 1800-SERVI'
+                };
+              }
+            } catch (error) {
+              const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
+              result = { error: `Error al obtener sucursales: ${errorMsg}` };
             }
             break;
 
@@ -422,31 +508,19 @@ export class AIService {
             result = { error: 'Herramienta no reconocida' };
         }
 
-        updatedMessages.push({
+        // Agregar resultado de la tool al historial
+        currentMessages.push({
           role: 'tool',
           tool_call_id: toolCall.id,
           content: JSON.stringify(result),
         });
       }
-
-      const finalResponse = await openrouter.chat.completions.create({
-        model: 'anthropic/claude-3-haiku',
-        messages: updatedMessages,
-        tools,
-        max_tokens: 300,
-      });
-
-      const finalTokens = finalResponse.usage?.total_tokens || 0;
-
-      return {
-        content: finalResponse.choices[0].message.content || '',
-        tokensUsed: tokensUsed + finalTokens,
-      };
     }
 
+    // Si llegamos aquí, se agotaron las rondas
     return {
-      content: choice.message.content || '',
-      tokensUsed,
+      content: 'Disculpa, hubo un problema al procesar tu solicitud. Por favor, intenta de nuevo.',
+      tokensUsed: totalTokens,
     };
   }
 }

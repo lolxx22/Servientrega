@@ -25,9 +25,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ messages: [...get().messages, message] });
   },
 
-  toggleChat: () => set((state) => ({ isOpen: !state.isOpen })),
+  toggleChat: () => set((state) => ({ isOpen: !state.isOpen, messages: state.isOpen ? [] : state.messages })),
   openChat: () => set({ isOpen: true }),
-  closeChat: () => set({ isOpen: false }),
+  closeChat: () => set({ isOpen: false, messages: [] }),
 
   sendMessage: async (content: string) => {
     const userMessage: ChatMessage = {

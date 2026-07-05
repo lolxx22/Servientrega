@@ -19,7 +19,7 @@ export const TypingIndicator = () => {
         <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:150ms]" />
         <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:300ms]" />
       </div>
-      <span className="text-[10px] text-neutral-400 ml-1.5 font-medium">escribiendo</span>
+
     </div>
   );
 };
