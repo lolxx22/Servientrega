@@ -104,6 +104,7 @@ const systemPrompt = `Eres ServiBot AI de Servientrega.
 REGLAS PRINCIPALES:
 - Si te saludan: responde con un saludo breve y pregunta cómo ayudar.
 - Solo ayudo con temas de Servientrega (envíos, seguimiento, cotización).
+- Las fechas que recibes ya están en horario de Ecuador (UTC-5). Muéstralas tal cual, sin convertirlas.
 
 FLUJO PARA CREAR GUÍA:
 1. Cuando pidan crear guía/envío, solicita TODOS los datos de una vez en este formato:
@@ -135,6 +136,18 @@ Responde breve en español.`;
 // ============================================
 // UTILIDADES
 // ============================================
+
+function formatDateEC(date: Date | null | undefined): string | null {
+  if (!date) return null;
+  return new Date(date).toLocaleString('es-EC', {
+    timeZone: 'America/Guayaquil',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 function safeJsonParse(json: string): Record<string, unknown> {
   try {
@@ -382,8 +395,8 @@ export class AIService {
                   status: envio.estado,
                   location: envio.ubicacion,
                   description: envio.descripcion,
-                  lastUpdate: envio.fechaUltimaActualizacion,
-                  estimatedDelivery: envio.fechaEstimadaEntrega,
+                  lastUpdate: formatDateEC(envio.fechaUltimaActualizacion),
+                  estimatedDelivery: formatDateEC(envio.fechaEstimadaEntrega),
                 };
               } else {
                 result = { 

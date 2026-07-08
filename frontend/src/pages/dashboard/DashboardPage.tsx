@@ -199,7 +199,7 @@ export const DashboardPage = () => {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                       <h2 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-600)', textTransform: 'uppercase', letterSpacing: '0.09em', margin: 0 }}>Métricas generales</h2>
                       <span style={{ fontSize: 11, color: 'var(--color-neutral-400)', fontFamily: 'var(--font-mono)' }}>
-                        {new Date().toLocaleDateString('es-EC', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {new Date().toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: 'numeric', month: 'long', year: 'numeric' })}
                       </span>
                     </div>
                     <DashboardMetrics />
