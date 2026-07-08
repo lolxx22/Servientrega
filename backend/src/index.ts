@@ -1,3 +1,4 @@
+import http from 'http';
 import app from './infrastructure/http/express/app';
 import { env } from './config/env';
 import { prisma } from './config/database';
@@ -11,13 +12,7 @@ const startServer = async () => {
     console.log('✅ Conexión a PostgreSQL establecida');
 
     const PORT = parseInt(env.PORT);
-
-    const server = app.listen(PORT, () => {
-      console.log(`🚀 Servidor Servibot AI ejecutándose en puerto ${PORT}`);
-      console.log(`📡 Environment: ${env.NODE_ENV}`);
-      console.log(`🌐 URL: http://localhost:${PORT}`);
-      console.log(`🔑 Instance ID: ${INSTANCE_ID}`);
-    });
+    const server = http.createServer(app);
 
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
@@ -25,7 +20,15 @@ const startServer = async () => {
         console.error(`   Cierra el proceso que lo usa o cambia el puerto en .env (PORT=3001)\n`);
         process.exit(1);
       }
-      throw err;
+      console.error('❌ Error del servidor:', err);
+      process.exit(1);
+    });
+
+    server.listen(PORT, () => {
+      console.log(`🚀 Servidor Servibot AI ejecutándose en puerto ${PORT}`);
+      console.log(`📡 Environment: ${env.NODE_ENV}`);
+      console.log(`🌐 URL: http://localhost:${PORT}`);
+      console.log(`🔑 Instance ID: ${INSTANCE_ID}`);
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);
