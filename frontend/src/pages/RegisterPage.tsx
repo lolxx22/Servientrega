@@ -125,7 +125,7 @@ export const RegisterPage = () => {
 
           {/* Features */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {features.map(({ text }, i) => (
+            {features.map(({ icon: Icon, text }, i) => (
               <motion.div
                 key={text}
                 initial={{ opacity: 0, x: -10 }}

@@ -200,7 +200,7 @@ const UpdateStatusModal = ({ shipment, onClose }: { shipment: Shipment; onClose:
     e.preventDefault();
     setSaving(true);
     try {
-      await updateStatus(shipment.id, estado, ubicacion || '');
+      await updateStatus(shipment.id, estado, ubicacion || undefined);
       onClose();
     } finally {
       setSaving(false);

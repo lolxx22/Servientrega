@@ -7,7 +7,7 @@ import { TypingIndicator } from '../ui/Spinner';
 const SUGGESTED = ['Crear guía', 'Rastrear envío', 'Consultar precio'];
 
 export const ChatWidget = () => {
-  const { isOpen, toggleChat, messages, isTyping, sendMessage } = useChatStore();
+  const { isOpen, toggleChat, messages, isTyping, sendMessage, clearMessages } = useChatStore();
   const [input, setInput] = useState('');
   const endRef   = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
