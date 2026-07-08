@@ -12,11 +12,20 @@ const startServer = async () => {
 
     const PORT = parseInt(env.PORT);
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Servidor Servibot AI ejecutándose en puerto ${PORT}`);
       console.log(`📡 Environment: ${env.NODE_ENV}`);
       console.log(`🌐 URL: http://localhost:${PORT}`);
       console.log(`🔑 Instance ID: ${INSTANCE_ID}`);
+    });
+
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`\n❌ El puerto ${PORT} ya está en uso.`);
+        console.error(`   Cierra el proceso que lo usa o cambia el puerto en .env (PORT=3001)\n`);
+        process.exit(1);
+      }
+      throw err;
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);
